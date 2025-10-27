@@ -10,25 +10,29 @@ export class EmailObserver extends Observer {
 
   async initializeTransporter() {
     try {
-      // Create a test account on Ethereal (no credentials needed)
-      const testAccount = await nodemailer.createTestAccount();
-      
-      // FIXED: Changed createTransporter to createTransport
+      // Use fixed Ethereal credentials instead of creating new test accounts
       this.transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
         port: 587,
         secure: false,
         auth: {
-          user: testAccount.user,
-          pass: testAccount.pass
-        }
+          user: process.env.ETHEREAL_USER || 'bxuydshbtaalihcd@ethereal.email',
+          pass: process.env.ETHEREAL_PASS || 'DzEqS3badWYsCnzSyM'
+        },
+        // Add timeout settings
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000,
+        socketTimeout: 10000
       });
 
-      console.log('✅ EmailObserver initialized with Ethereal test account');
-      console.log('📧 Test account:', testAccount.user);
+      // Verify connection
+      await this.transporter.verify();
+      console.log('✅ EmailObserver initialized with Ethereal');
+      console.log('📧 Using account:', process.env.ETHEREAL_USER || 'bxuydshbtaalihcd@ethereal.email');
       
     } catch (error) {
-      console.error('❌ Failed to initialize EmailObserver:', error);
+      console.error('❌ Failed to initialize EmailObserver:', error.message);
+      // Don't throw error - app should work without email
     }
   }
 
@@ -186,17 +190,16 @@ export class EmailObserver extends Observer {
   async sendEmail(mailOptions, emailType) {
     if (!this.transporter) {
       console.warn('⚠️ Email transporter not ready, skipping email send');
-      return;
+      return { success: false, error: 'Transporter not ready' };
     }
 
     try {
+      // Add timeout to sendMail
       const info = await this.transporter.sendMail(mailOptions);
       const previewUrl = nodemailer.getTestMessageUrl(info);
       
       console.log(`✅ ${emailType} sent successfully!`);
-      console.log('📧 Message ID:', info.messageId);
-      console.log('👀 Preview URL:', previewUrl);
-      console.log('📨 To:', mailOptions.to);
+      console.log('📧 Preview URL:', previewUrl);
       
       return {
         success: true,
@@ -204,7 +207,8 @@ export class EmailObserver extends Observer {
         previewUrl: previewUrl
       };
     } catch (error) {
-      console.error(`❌ Error sending ${emailType}:`, error);
+      console.error(`❌ Error sending ${emailType}:`, error.message);
+      // Return error but don't throw - non-blocking
       return {
         success: false,
         error: error.message
