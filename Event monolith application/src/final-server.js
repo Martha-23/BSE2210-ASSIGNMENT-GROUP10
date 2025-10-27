@@ -15,7 +15,7 @@ const port = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.json());
 
-// Swagger configuration
+// Swagger configuration - UPDATED FOR RENDER
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
@@ -26,12 +26,8 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `https://event-monolith-app-oa9j.onrender.com`,
-        description: 'Production server',
-      },
-      {
-        url: `http://localhost:${port}`,
-        description: 'Development server',
+        url: process.env.RENDER_URL ? `https://${process.env.RENDER_URL}` : `http://localhost:${port}`,
+        description: process.env.RENDER_URL ? 'Production server' : 'Development server',
       },
     ],
     components: {
@@ -99,6 +95,7 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'Event Management API Server is running!',
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
     observers: notificationService.getObservers()
   });
 });
@@ -135,6 +132,100 @@ app.get('/', (req, res) => {
  *         description: User created successfully
  *       400:
  *         description: User already exists or validation error
+ */
+app.post('/api/register', async (req, res) => {
+  try {
+    const { email, password, role = 'ATTENDEE', name = 'User' } = req.body;
+    
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+    
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        role,
+      }
+    });
+    
+    // Notify observers about user registration (NON-BLOCKING)
+    notificationService.notifyUserRegistered(email, name)
+      .then(() => console.log('✅ User registration notifications sent'))
+      .catch(err => console.error('❌ User registration notifications failed:', err));
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+    
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt
+      },
+      token,
+      notification: 'Welcome email sent via observer pattern'
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// User login endpoint
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     summary: Login user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
  */
 app.post('/api/register', async (req, res) => {
   try {
@@ -810,20 +901,28 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log(`Swagger docs available at http://localhost:${port}/api-docs`);
-  console.log(`Active observers:`, notificationService.getObservers());
+// Start server - UPDATED FOR RENDER
+app.listen(port, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${port}`);
+  console.log(`📚 Swagger docs available at http://localhost:${port}/api-docs`);
+  console.log(`🔍 Active observers:`, notificationService.getObservers());
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Log database connection status
+  prisma.$connect()
+    .then(() => console.log('✅ Database connected successfully'))
+    .catch(err => console.error('❌ Database connection failed:', err));
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
+  console.log('🛑 Shutting down gracefully...');
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
+  console.log('🛑 Shutting down gracefully...');
   await prisma.$disconnect();
   process.exit(0);
 });
