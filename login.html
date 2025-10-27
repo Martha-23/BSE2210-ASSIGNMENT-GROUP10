@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Event Application — Frontend</title>
+  <style>
+    .home-btn {
+      background: linear-gradient(90deg, rgba(187,134,252,0.18), rgba(255,255,255,0.08));
+      color: var(--accent-color);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 8px 18px;
+      font-size: 1rem;
+      font-weight: 500;
+      margin-left: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s, transform 0.12s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .home-btn:hover {
+      background: linear-gradient(90deg, rgba(187,134,252,0.28), rgba(255,255,255,0.18));
+      color: #fff;
+      transform: translateY(-2px);
+    }
+    /* Glassmorphism + dark theme variables */
+    :root {
+      --background-color: #0f1113; /* main page background */
+      --accent-color: #bb86fc;
+      --text-color: #e6e6e6;
+      --muted-color: #a9a9a9;
+      --glass-bg: rgba(255,255,255,0.03);
+      --glass-border: rgba(255,255,255,0.06);
+      --panel-shadow: rgba(0,0,0,0.6);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Page */
+    body {
+      background: radial-gradient( circle at 10% 10%, rgba(187,134,252,0.06), transparent 10% ),
+                  radial-gradient( circle at 90% 90%, rgba(0,0,0,0.25), transparent 20% ),
+                  var(--background-color);
+      color: var(--text-color);
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 18px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+
+    h1 { font-size: 1.5rem; margin: 0; color: var(--accent-color); }
+
+    /* Glass panel used by many parts of the UI */
+    .box {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: blur(10px) saturate(130%);
+      backdrop-filter: blur(10px) saturate(130%);
+      box-shadow: 0 8px 28px var(--panel-shadow);
+      padding: 36px 40px;
+      border-radius: 22px;
+      margin: 40px auto 0 auto;
+      max-width: 370px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    #auth {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    #signupForm, #loginForm {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* Inputs / controls - subtle translucent backgrounds */
+    input, button, select, textarea {
+      padding: 10px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.32);
+      color: var(--text-color);
+      transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+    }
+
+    input:focus, button:focus, select:focus, textarea:focus {
+      border-color: rgba(187,134,252,0.9);
+      box-shadow: 0 4px 18px rgba(187,134,252,0.08);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    /* Primary buttons use accent color */
+    button {
+      background-color: var(--accent-color);
+      color: #fff;
+      cursor: pointer;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      transition: background-color 0.18s, transform 0.12s;
+    }
+
+    button:hover { background-color: #a76bcf; transform: translateY(-2px); }
+
+    .row { display: flex; gap: 8px; }
+    .row > * { flex: 1; }
+    .small { width: auto; padding: 8px; }
+
+    /* Event card - slightly stronger glass so content reads well */
+    .event {
+      border: 1px solid rgba(255,255,255,0.04);
+      padding: 12px;
+      border-radius: 10px;
+      margin: 8px 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+
+    .event:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.55); }
+
+    .muted { color: var(--muted-color); font-size: 0.9rem; }
+    .hidden { display: none; }
+
+    footer { margin-top: 18px; font-size: 0.9rem; color: var(--muted-color); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Event Application</h1>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div id="userSummary" class="muted">Not signed in</div>
+      <a href="home.html" class="home-btn">Home</a>
+    </div>
+  </header>
+
+  <section id="auth" class="box">
+    <h2>Sign up / Login</h2>
+
+    <div id="signupForm">
+      <h3>Sign up</h3>
+      <input id="suEmail" placeholder="Email" type="email" />
+      <input id="suPassword" placeholder="Password" type="password" />
+      <select id="suRole">
+        <option value="ATTENDEE">Attendee</option>
+        <option value="ORGANIZER">Organizer</option>
+        <option value="ADMIN">Administrator</option>
+      </select>
+      <button id="signupBtn">Sign up</button>
+    </div>
+
+    <br>
+
+    <div id="loginForm">
+      <h3>Login</h3>
+      <input id="liEmail" placeholder="Email" type="email" />
+      <input id="liPassword" placeholder="Password" type="password" />
+      <button id="loginBtn">Login</button>
+    </div>
+
+    <div id="authMsg" class="muted"></div>
+  </section>
+
+  <section id="mainUI" class="box hidden">
+    <h2>Events</h2>
+
+    <div id="actions" class="row">
+      <div>
+        <button id="refreshBtn" class="small">Refresh</button>
+      </div>
+      <div id="createWrap" class="hidden">
+        <button id="toggleCreate" class="small">New Event</button>
+      </div>
+      <div>
+        <button id="logoutBtn" class="small">Logout</button>
+      </div>
+    </div>
+
+    <div id="createForm" class="box hidden">
+      <h3>Create Event</h3>
+      <input id="evTitle" placeholder="Title" />
+      <textarea id="evDescription" placeholder="Description"></textarea>
+      <input id="evDate" type="datetime-local" />
+      <input id="evLocation" placeholder="Location" />
+      <button id="createEventBtn">Create</button>
+    </div>
+
+    <div id="eventsList" class="box">
+      Loading events...
+    </div>
+  </section>
+
+  <footer>
+    <div class="muted">Login page &copy; GROUP 10</div>
+  </footer>
+
+  <script>
+    // ---------- CONFIG ----------
+    // Set your backend base URL here (no trailing slash), e.g.:
+    // const API_BASE = 'https://your-app.onrender.com'
+    // If you leave it empty, it will use the same origin where this file runs.
+    const API_BASE = '';
+
+    // ---------- tiny helpers ----------
+    const $ = id => document.getElementById(id);
+    const authMsg = msg => $('authMsg').innerText = msg || '';
+
+    function apiUrl(path){
+      if(API_BASE) return API_BASE + path;
+      return window.location.origin + path;
+    }
+
+    function parseJwt(token){
+      try{
+        const p = token.split('.')[1];
+        // base64url -> base64
+        const base64 = p.replace(/-/g, '+').replace(/_/g, '/');
+        const json = decodeURIComponent(atob(base64).split('').map(c => '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+        return JSON.parse(json);
+      }catch(e){ return null }
+    }
+
+    function saveToken(t){ localStorage.setItem('token', t); }
+    function getToken(){ return localStorage.getItem('token'); }
+    function clearToken(){ localStorage.removeItem('token'); }
+
+    async function api(path, opts={}){
+      const headers = opts.headers || {};
+      const token = getToken();
+      if(token) headers['Authorization'] = 'Bearer ' + token;
+      headers['Content-Type'] = 'application/json';
+      const res = await fetch(apiUrl(path), {...opts, headers});
+      const text = await res.text();
+      let data;
+      try{ data = text ? JSON.parse(text) : null } catch(e){ data = text }
+      if(!res.ok) throw {status: res.status, data};
+      return data;
+    }
+
+    // ---------- UI state ----------
+    let currentUser = null;
+    let ws = null;
+
+    function setSignedIn(token){
+      saveToken(token);
+      const payload = parseJwt(token);
+      currentUser = payload || null; // payload usually contains `email` and `role`
+      $('auth').classList.add('hidden');
+      $('mainUI').classList.remove('hidden');
+      $('userSummary').innerText = currentUser ? `${currentUser.email || 'User'} (${currentUser.role || 'unknown'})` : 'Signed in';
+      if(currentUser && currentUser.role === 'ORGANIZER') $('createWrap').classList.remove('hidden');
+      // Show events page link after login
+      let eventsBtn = document.getElementById('eventsPageBtn');
+      if(!eventsBtn){
+        eventsBtn = document.createElement('a');
+        eventsBtn.id = 'eventsPageBtn';
+        eventsBtn.href = 'events.html';
+        eventsBtn.className = 'home-btn';
+        eventsBtn.innerText = 'Events Page';
+        eventsBtn.style.marginLeft = '10px';
+        document.querySelector('header').appendChild(eventsBtn);
+      }
+      startWS();
+      fetchAndRenderEvents();
+    }
+
+    function setSignedOut(){
+      clearToken();
+      currentUser = null;
+      $('auth').classList.remove('hidden');
+      $('mainUI').classList.add('hidden');
+      $('userSummary').innerText = 'Not signed in';
+      stopWS();
+    }
+
+    // ---------- Auth handlers ----------
+    $('signupBtn').addEventListener('click', async ()=>{
+      const email = $('suEmail').value.trim();
+      const password = $('suPassword').value.trim();
+      const role = $('suRole').value; // backend may ignore role, but we include it for convenience
+      if(!email || !password){ authMsg('Email and password required'); return }
+      try{
+        const data = await api('/signup', {method:'POST', body: JSON.stringify({email,password,role})});
+        authMsg('Signed up — please login.');
+      }catch(e){ authMsg('Signup failed: ' + (e.data?.message || JSON.stringify(e.data) || e.status)); }
+    })
+
+    $('loginBtn').addEventListener('click', async ()=>{
+      const email = $('liEmail').value.trim();
+      const password = $('liPassword').value.trim();
+      if(!email || !password){ authMsg('Email and password required'); return }
+      try{
+        // Expecting backend to return { token: '...' } OR { token, user }
+        const data = await api('/login', {method:'POST', body: JSON.stringify({email,password})});
+        const token = data.token || data.accessToken || null;
+        if(!token){ authMsg('Login did not return token'); return }
+        setSignedIn(token);
+        authMsg('');
+      }catch(e){ authMsg('Login failed: ' + (e.data?.message || JSON.stringify(e.data) || e.status)); }
+    })
+
+    $('logoutBtn').addEventListener('click', ()=>{ setSignedOut(); })
+
+    // ---------- Event UI ----------
+    $('refreshBtn').addEventListener('click', fetchAndRenderEvents);
+    $('toggleCreate').addEventListener('click', ()=> $('createForm').classList.toggle('hidden'));
+    $('createEventBtn').addEventListener('click', async ()=>{
+      const title = $('evTitle').value.trim();
+      const description = $('evDescription').value.trim();
+      const date = $('evDate').value;
+      const location = $('evLocation').value.trim();
+      if(!title || !date){ alert('Title and date required'); return }
+      try{
+        await api('/events', {method:'POST', body: JSON.stringify({title,description,date,location})});
+        $('createForm').classList.add('hidden');
+        fetchAndRenderEvents();
+      }catch(e){ alert('Create failed: ' + (e.data?.message || JSON.stringify(e.data) || e.status)); }
+    })
+
+    async function fetchAndRenderEvents(){
+      const el = $('eventsList');
+      el.innerText = 'Loading...';
+      try{
+        const events = await api('/events');
+        if(!Array.isArray(events)) return el.innerText = 'No events';
+        el.innerHTML = '';
+        events.forEach(ev => {
+          const div = document.createElement('div');
+          div.className = 'event';
+          div.innerHTML = `
+            <strong>${ev.title}</strong> <div class="muted">${new Date(ev.date).toLocaleString()}</div>
+            <div>${ev.description || ''}</div>
+            <div class="muted">${ev.location || ''} • Organizer: ${ev.organizerId || ev.organizer?.email || '—'}</div>
+          `;
+
+          const controls = document.createElement('div');
+
+          // RSVP
+          const rBtn = document.createElement('button');
+          rBtn.innerText = 'RSVP';
+          rBtn.className = 'small';
+          rBtn.addEventListener('click', async ()=>{
+            try{
+              await api(`/events/${ev.id}/rsvp`, {method:'POST', body: JSON.stringify({status:'GOING'})});
+              alert('RSVP sent');
+            }catch(e){ alert('RSVP failed'); }
+          });
+          controls.appendChild(rBtn);
+
+          // Approve (admin)
+          if(currentUser && currentUser.role === 'ADMIN' && !ev.approved){
+            const aBtn = document.createElement('button');
+            aBtn.innerText = 'Approve';
+            aBtn.className = 'small';
+            aBtn.addEventListener('click', async ()=>{
+              try{ await api(`/events/${ev.id}/approve`, {method:'PUT'}); fetchAndRenderEvents(); }catch(e){ alert('Approve failed') }
+            });
+            controls.appendChild(aBtn);
+          }
+
+          // Edit/Delete for organizer or admin (minimal: delete only)
+          if(currentUser && (currentUser.role === 'ADMIN' || currentUser.email === ev.organizer?.email || currentUser.sub === ev.organizerId)){
+            const dBtn = document.createElement('button');
+            dBtn.innerText = 'Delete';
+            dBtn.className = 'small';
+            dBtn.addEventListener('click', async ()=>{
+              if(!confirm('Delete this event?')) return;
+              try{ await api(`/events/${ev.id}`, {method:'DELETE'}); fetchAndRenderEvents(); }catch(e){ alert('Delete failed') }
+            });
+            controls.appendChild(dBtn);
+          }
+
+          div.appendChild(controls);
+          el.appendChild(div);
+        });
+      }catch(e){ el.innerText = 'Failed to load events'; }
+    }
+
+    // ---------- WebSocket for realtime ----------
+    function startWS(){
+      try{ stopWS(); }catch(e){}
+      const base = API_BASE || window.location.origin;
+      const wsUrl = (base.startsWith('https') ? base.replace(/^https/, 'wss') : base.replace(/^http/, 'ws')) + '/ws';
+      ws = new WebSocket(wsUrl);
+      ws.onopen = ()=> console.log('WS open');
+      ws.onmessage = (ev)=>{
+        try{ const data = JSON.parse(ev.data); console.log('WS msg', data); }
+        catch(e){ console.log('WS raw', ev.data); }
+        // For simplicity: refresh list on any WS event
+        fetchAndRenderEvents();
+      };
+      ws.onclose = ()=> console.log('WS closed');
+      ws.onerror = (err)=> console.log('WS error', err);
+    }
+    function stopWS(){ if(ws){ ws.close(); ws = null; } }
+
+    // ---------- init ----------
+    (function(){
+      const t = getToken();
+      if(t){ const p = parseJwt(t); if(p) setSignedIn(t); else setSignedOut(); }
+      else setSignedOut();
+    })();
+
+  </script>
+</body>
+</html>
