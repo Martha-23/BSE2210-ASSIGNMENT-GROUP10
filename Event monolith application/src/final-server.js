@@ -1,3 +1,5 @@
+import 'dotenv/config'; // Load environment variables FIRST - ES6 style
+
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
@@ -11,8 +13,25 @@ const prisma = new PrismaClient();
 const app = express();
 const port = process.env.PORT || 10000;
 
-// Middleware
-app.use(cors());
+// Runtime detection for logging
+const isProduction = process.env.NODE_ENV === 'production';
+const renderUrl = process.env.RENDER_EXTERNAL_URL;
+
+// Debug: Check if environment variables are loaded
+console.log('🔧 Environment Variables Status:');
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? '✅ Loaded' : '❌ Missing');
+console.log('ETHEREAL_USER:', process.env.ETHEREAL_USER ? '✅ Loaded' : '❌ Missing');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ Loaded' : '❌ Missing');
+console.log('NODE_ENV:', process.env.NODE_ENV || 'development');
+console.log('RENDER_EXTERNAL_URL:', renderUrl || 'Not set (local)');
+
+// Middleware - Updated CORS for Render
+app.use(cors({
+  origin: isProduction && renderUrl 
+    ? [renderUrl, `https://${renderUrl}`] 
+    : ['http://localhost:10000', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Swagger configuration - UPDATED FOR RENDER
@@ -25,9 +44,13 @@ const swaggerOptions = {
       description: 'API for managing events, users, and RSVPs with Observer Pattern notifications',
     },
     servers: [
+      ...(isProduction && renderUrl ? [{
+        url: `https://${renderUrl}`,
+        description: 'Production server',
+      }] : []),
       {
-        url: process.env.RENDER_URL ? `https://${process.env.RENDER_URL}` : `http://localhost:${port}`,
-        description: process.env.RENDER_URL ? 'Production server' : 'Development server',
+        url: `http://localhost:${port}`,
+        description: 'Development server',
       },
     ],
     components: {
@@ -96,7 +119,9 @@ app.get('/', (req, res) => {
     message: 'Event Management API Server is running!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    observers: notificationService.getObservers()
+    deployUrl: renderUrl || 'localhost',
+    observers: notificationService.getObservers(),
+    database: process.env.DATABASE_URL ? 'Connected' : 'Not configured'
   });
 });
 
@@ -132,100 +157,6 @@ app.get('/', (req, res) => {
  *         description: User created successfully
  *       400:
  *         description: User already exists or validation error
- */
-app.post('/api/register', async (req, res) => {
-  try {
-    const { email, password, role = 'ATTENDEE', name = 'User' } = req.body;
-    
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-    
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-    
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-    
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-    
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        role,
-      }
-    });
-    
-    // Notify observers about user registration (NON-BLOCKING)
-    notificationService.notifyUserRegistered(email, name)
-      .then(() => console.log('✅ User registration notifications sent'))
-      .catch(err => console.error('❌ User registration notifications failed:', err));
-    
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        role: user.role 
-      },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
-    
-    res.status(201).json({
-      message: 'User created successfully',
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt
-      },
-      token,
-      notification: 'Welcome email sent via observer pattern'
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// User login endpoint
-/**
- * @swagger
- * /api/login:
- *   post:
- *     summary: Login user
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Login successful
- *       401:
- *         description: Invalid credentials
  */
 app.post('/api/register', async (req, res) => {
   try {
@@ -901,17 +832,27 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Start server - UPDATED FOR RENDER
-app.listen(port, '0.0.0.0', () => {
+// Start server - CRITICAL FIX FOR RENDER
+const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+app.listen(port, host, () => {
+  const baseUrl = isProduction && renderUrl 
+    ? `https://${renderUrl}` 
+    : `http://localhost:${port}`;
+  
   console.log(`🚀 Server running on port ${port}`);
-  console.log(`📚 Swagger docs available at http://localhost:${port}/api-docs`);
+  console.log(`📚 Swagger docs available at ${baseUrl}/api-docs`);
   console.log(`🔍 Active observers:`, notificationService.getObservers());
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📍 Host: ${host}`);
+  console.log(`🔗 Access your app at: ${baseUrl}`);
   
   // Log database connection status
   prisma.$connect()
     .then(() => console.log('✅ Database connected successfully'))
-    .catch(err => console.error('❌ Database connection failed:', err));
+    .catch(err => {
+      console.error('❌ Database connection failed:', err.message);
+      console.log('💡 Tip: Check if your Neon.tech database allows connections from Render IPs');
+    });
 });
 
 // Graceful shutdown
