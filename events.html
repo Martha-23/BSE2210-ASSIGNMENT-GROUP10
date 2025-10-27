@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Events — Event App</title>
+  <style>
+    :root {
+      --background-color: #0f1113;
+      --accent-color: #bb86fc;
+      --text-color: #e6e6e6;
+      --muted-color: #a9a9a9;
+      --glass-bg: rgba(255,255,255,0.03);
+      --glass-border: rgba(255,255,255,0.06);
+      --panel-shadow: rgba(0,0,0,0.6);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background: radial-gradient( circle at 10% 10%, rgba(187,134,252,0.06), transparent 10% ),
+                  radial-gradient( circle at 90% 90%, rgba(0,0,0,0.25), transparent 20% ),
+                  var(--background-color);
+      color: var(--text-color);
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .box {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: blur(10px) saturate(130%);
+      backdrop-filter: blur(10px) saturate(130%);
+      box-shadow: 0 8px 28px var(--panel-shadow);
+      padding: 36px 40px;
+      border-radius: 22px;
+      margin: 24px auto 0 auto;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    h1 {
+      color: var(--accent-color);
+      font-size: 2rem;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .event-list {
+      width: 100%;
+      margin-bottom: 24px;
+    }
+    .event-item {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      margin-bottom: 16px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      position: relative;
+    }
+    .event-title {
+      font-size: 1.2rem;
+      color: var(--accent-color);
+      margin-bottom: 4px;
+    }
+    .event-details {
+      color: var(--text-color);
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+    .event-meta {
+      color: var(--muted-color);
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+    .event-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .btn {
+      background-color: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 18px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      transition: background 0.18s, transform 0.12s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:hover {
+      background-color: #a76bcf;
+      transform: translateY(-2px);
+    }
+    .admin-panel {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(187,134,252,0.08);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      color: var(--accent-color);
+      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .event-form {
+      margin-top: 24px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .event-form input, .event-form textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: rgba(0,0,0,0.32);
+      color: var(--text-color);
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+    .event-form button {
+      width: 100%;
+    }
+    .muted {
+      color: var(--muted-color);
+      font-size: 0.95rem;
+      text-align: center;
+    }
+    footer {
+      margin-top: 32px;
+      color: var(--muted-color);
+      font-size: 0.95rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Events</h1>
+    <div id="eventList" class="event-list"></div>
+    <div id="eventDetail" class="event-item" style="display:none;"></div>
+    <form id="eventForm" class="event-form" style="display:none;">
+      <input id="evTitle" placeholder="Title" required />
+      <textarea id="evDescription" placeholder="Description" required></textarea>
+      <input id="evDate" type="datetime-local" required />
+      <input id="evLocation" placeholder="Location" required />
+      <button id="saveEventBtn" class="btn" type="submit">Save Event</button>
+    </form>
+    <div id="adminPanel" class="admin-panel" style="display:none;">
+      <button id="approveEventBtn" class="btn">Approve Event</button>
+    </div>
+    <div id="rsvpPanel" style="display:none;">
+      <button id="rsvpBtn" class="btn">RSVP</button>
+    </div>
+    <div id="eventsMsg" class="muted"></div>
+  </div>
+  <footer>
+    <div>Events Page &copy; GROUP 10</div>
+  </footer>
+  <script>
+    // ---------- CONFIG ----------
+    const API_BASE = '';
+    const $ = id => document.getElementById(id);
+    function apiUrl(path){
+      if(API_BASE) return API_BASE + path;
+      return window.location.origin + path;
+    }
+    function parseJwt(token){
+      try{
+        const p = token.split('.')[1];
+        const base64 = p.replace(/-/g, '+').replace(/_/g, '/');
+        const json = decodeURIComponent(atob(base64).split('').map(c => '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+        return JSON.parse(json);
+      }catch(e){ return null }
+    }
+    function saveToken(t){ localStorage.setItem('token', t); }
+    function getToken(){ return localStorage.getItem('token'); }
+    function clearToken(){ localStorage.removeItem('token'); }
+    async function api(path, opts={}){
+      const headers = opts.headers || {};
+      const token = getToken();
+      if(token) headers['Authorization'] = 'Bearer ' + token;
+      headers['Content-Type'] = 'application/json';
+      const res = await fetch(apiUrl(path), {...opts, headers});
+      const text = await res.text();
+      let data;
+      try{ data = text ? JSON.parse(text) : null } catch(e){ data = text }
+      if(!res.ok) throw {status: res.status, data};
+      return data;
+    }
+    // ---------- UI state ----------
+    let currentUser = null;
+    let events = [];
+    let selectedEvent = null;
+    // ---------- Role helpers ----------
+    function getRole(){
+      const t = getToken();
+      if(!t) return null;
+      const p = parseJwt(t);
+      return p?.role || null;
+    }
+    function isOrganizer(){ return getRole() === 'ORGANIZER'; }
+    function isAdmin(){ return getRole() === 'ADMIN'; }
+    function isLoggedIn(){ return !!getToken(); }
+    // ---------- Event List ----------
+    async function fetchEvents(){
+      $('eventsMsg').innerText = 'Loading events...';
+      try{
+        events = await api('/events');
+        renderEventList();
+        $('eventsMsg').innerText = '';
+      }catch(e){ $('eventsMsg').innerText = 'Failed to load events.'; }
+    }
+    function renderEventList(){
+      const el = $('eventList');
+      el.innerHTML = '';
+      const approvedEvents = Array.isArray(events) ? events.filter(ev => ev.approved) : [];
+      if(!approvedEvents.length){ el.innerHTML = '<div class="muted">No approved events.</div>'; return; }
+      approvedEvents.forEach(ev => {
+        const div = document.createElement('div');
+        div.className = 'event-item';
+        div.innerHTML = `<div class="event-title">${ev.title}</div>
+          <div class="event-details">${ev.description || ''}</div>
+          <div class="event-meta">${new Date(ev.date).toLocaleString()} • ${ev.location || ''}</div>
+          <div class="event-meta">RSVPs: ${ev.rsvpCount || 0}</div>`;
+        div.addEventListener('click', ()=> showEventDetail(ev));
+        el.appendChild(div);
+      });
+    }
+    // ---------- Event Detail ----------
+    function showEventDetail(ev){
+      selectedEvent = ev;
+      const el = $('eventDetail');
+      el.style.display = '';
+      el.innerHTML = `<div class="event-title">${ev.title}</div>
+        <div class="event-details">${ev.description || ''}</div>
+        <div class="event-meta">${new Date(ev.date).toLocaleString()} • ${ev.location || ''}</div>
+        <div class="event-meta">RSVPs: ${ev.rsvpCount || 0}</div>`;
+      // Show RSVP if logged in
+      $('rsvpPanel').style.display = isLoggedIn() ? '' : 'none';
+      // Show admin panel if admin and not approved
+      $('adminPanel').style.display = (isAdmin() && !ev.approved) ? '' : 'none';
+      // Show event form if organizer and user is event creator
+      $('eventForm').style.display = (isOrganizer() && (currentUser?.sub === ev.organizerId || currentUser?.email === ev.organizer?.email)) ? '' : 'none';
+    }
+    // ---------- Event Form ----------
+    function showEventForm(){
+      $('eventForm').style.display = isOrganizer() ? '' : 'none';
+      $('eventDetail').style.display = 'none';
+      $('adminPanel').style.display = 'none';
+      $('rsvpPanel').style.display = 'none';
+      $('evTitle').value = '';
+      $('evDescription').value = '';
+      $('evDate').value = '';
+      $('evLocation').value = '';
+    }
+    $('eventForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(!isOrganizer()) return;
+      const title = $('evTitle').value.trim();
+      const description = $('evDescription').value.trim();
+      const date = $('evDate').value;
+      const location = $('evLocation').value.trim();
+      if(!title || !date){ $('eventsMsg').innerText = 'Title and date required.'; return; }
+      try{
+        await api('/events', {method:'POST', body: JSON.stringify({title,description,date,location})});
+        fetchEvents();
+        showEventForm();
+      }catch(e){ $('eventsMsg').innerText = 'Create failed.'; }
+    });
+    // ---------- Admin Panel ----------
+    $('approveEventBtn').addEventListener('click', async ()=>{
+      if(!isAdmin() || !selectedEvent) return;
+      try{
+        await api(`/events/${selectedEvent.id}/approve`, {method:'PUT'});
+        fetchEvents();
+        $('adminPanel').style.display = 'none';
+      }catch(e){ $('eventsMsg').innerText = 'Approve failed.'; }
+    });
+    // ---------- RSVP ----------
+    $('rsvpBtn').addEventListener('click', async ()=>{
+      if(!isLoggedIn() || !selectedEvent) return;
+      try{
+        await api(`/events/${selectedEvent.id}/rsvp`, {method:'POST', body: JSON.stringify({status:'GOING'})});
+        fetchEvents();
+      }catch(e){ $('eventsMsg').innerText = 'RSVP failed.'; }
+    });
+    // ---------- Init ----------
+    (function(){
+      const t = getToken();
+      if(t){ currentUser = parseJwt(t); }
+      fetchEvents();
+      // Organizer: show event form button
+      if(isOrganizer()){
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.innerText = 'Create Event';
+        btn.style.marginBottom = '18px';
+        btn.onclick = showEventForm;
+        document.querySelector('.box').insertBefore(btn, $('eventList'));
+      }
+    })();
+  </script>
+</body>
+</html>

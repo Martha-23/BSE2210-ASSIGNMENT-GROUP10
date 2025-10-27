@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Home — Event App</title>
+  <style>
+    :root {
+      --background-color: #0f1113;
+      --accent-color: #bb86fc;
+      --text-color: #e6e6e6;
+      --muted-color: #a9a9a9;
+      --glass-bg: rgba(255,255,255,0.03);
+      --glass-border: rgba(255,255,255,0.06);
+      --panel-shadow: rgba(0,0,0,0.6);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background: radial-gradient( circle at 10% 10%, rgba(187,134,252,0.06), transparent 10% ),
+                  radial-gradient( circle at 90% 90%, rgba(0,0,0,0.25), transparent 20% ),
+                  var(--background-color);
+      color: var(--text-color);
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .box {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: blur(8px) saturate(120%);
+      backdrop-filter: blur(8px) saturate(120%);
+      box-shadow: 0 6px 20px var(--panel-shadow);
+      padding: 36px 40px;
+      border-radius: 20px;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    h1 {
+      color: var(--accent-color);
+      font-size: 2rem;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    p {
+      color: var(--muted-color);
+      font-size: 1.1rem;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .btn {
+      background-color: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      transition: background 0.18s, transform 0.12s;
+    }
+    .btn:hover {
+      background-color: #a76bcf;
+      transform: translateY(-2px);
+    }
+    footer {
+      margin-top: 32px;
+      color: var(--muted-color);
+      font-size: 0.95rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Welcome to Event App</h1>
+    <p>Organize, discover, and RSVP to events.<br>Sign up or log in to get started!</p>
+    <a href="login.html" class="btn">Go to Login</a>
+  </div>
+  <footer>
+    <div>Homepage &copy; GROUP 10</div>
+  </footer>
+</body>
+</html>
