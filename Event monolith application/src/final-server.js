@@ -11,7 +11,7 @@ import notificationService from './services/notification.service.js';
 
 const prisma = new PrismaClient();
 const app = express();
-const port = process.env.PORT || 10000;
+const port = process.env.PORT || 3000; // Changed default to 3000
 
 // Runtime detection for logging
 const isProduction = process.env.NODE_ENV === 'production';
@@ -25,13 +25,25 @@ console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ Loaded' : '❌ Missing'
 console.log('NODE_ENV:', process.env.NODE_ENV || 'development');
 console.log('RENDER_EXTERNAL_URL:', renderUrl || 'Not set (local)');
 
-// Middleware - Updated CORS for Render
+// CORS Configuration - UPDATED FOR FRONTEND CONNECTION
 app.use(cors({
-  origin: isProduction && renderUrl 
-    ? [renderUrl, `https://${renderUrl}`] 
-    : ['http://localhost:10000', 'http://localhost:3000'],
-  credentials: true
+  origin: [
+    'http://localhost:3000', 
+    'http://127.0.0.1:3000',
+    'http://localhost:8080', 
+    'http://127.0.0.1:8080',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    ...(isProduction && renderUrl ? [renderUrl, `https://${renderUrl}`] : [])
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json());
 
 // Swagger configuration - UPDATED FOR RENDER
@@ -80,7 +92,7 @@ const authenticateToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {
@@ -204,7 +216,7 @@ app.post('/api/register', async (req, res) => {
         email: user.email,
         role: user.role 
       },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
     
@@ -283,7 +295,7 @@ app.post('/api/login', async (req, res) => {
         email: user.email,
         role: user.role 
       },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
     
